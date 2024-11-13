@@ -1,0 +1,48 @@
+
+.container-temperature1:hover {
+    border: 2px solid #3e23d60b; /* Màu viền mới khi hover */
+    box-shadow: 0 8px 16px rgba(0, 128, 0, 0.3); /* Tăng đổ bóng khi hover */
+}
+
+/* Mỗi khối con */
+.container-temperature1 {
+    position: relative;
+    background-color: #f0f4f8;
+    border-radius: 8px;
+    padding: 30px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+    min-width: 300px;
+    overflow: hidden;
+}
+
+/* Pseudo-element để tạo viền gradient */
+.container-temperature1::before {
+    content: "";
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    background: linear-gradient(90deg, #ff8a00, #e52e71, #9b59b6, #4CAF50);
+    border-radius: 8px;
+    z-index: -1;
+    transition: opacity 0.4s;
+    opacity: 0;
+    animation: border-animate 4s linear infinite; /* Animation gradient */
+}
+
+/* Hiệu ứng hiển thị đường viền khi hover */
+.container-temperature1:hover::before {
+    opacity: 1;
+}
+
+/* Animation gradient chuyển động */
+@keyframes border-animate {
+    0% {
+        background-position: 0 0;
+    }
+    100% {
+        background-position: 200% 0;
+    }
+}

@@ -1,0 +1,315 @@
+.header {
+    display: flex;
+	align-items: center;
+	height: 80px;
+	border-bottom: 1px solid var(--c-border-primary);
+	background-color: var(--c-background-primary);
+
+}
+.header-logo {
+	display: flex;
+    width: 50px;
+    height: auto;
+    margin-left: 1rem;
+    margin-right: 1rem;
+	}
+
+.header-navbar{
+	display: flex;
+	flex-grow: 1;
+	align-items: center;
+	justify-content: space-between;
+	@media (max-width: 1200px) {
+	display: none;
+	}
+}
+.header-navbar-item {
+    display: flex;
+	align-items: center;
+	a {
+		text-decoration: none;
+		color: var(--c-text-action);
+		font-weight: 500;
+		transition: 0.15s ease;
+		& + * {
+			margin-left: 1.5rem;
+		}
+
+		&:hover,
+		&:focus {
+			color: var(--c-accent-primary);
+		}
+	}
+}
+
+.header-auth {
+    align-items: center;
+    margin-right: 1rem;
+    a {
+		text-decoration: none;
+		color: var(--c-text-action);
+		font-weight: 500;
+		transition: 0.15s ease;
+		& + * {
+			margin-left: 1.5rem;
+		}
+
+		&:hover,
+		&:focus {
+			color: var(--c-accent-primary);
+		}
+	}
+
+}
+
+.container-temperature {
+    display: flex;
+    flex-wrap: wrap; /* Cho phép các khối xuống hàng nếu không đủ chỗ */
+    gap: 20px;
+    overflow-x: auto;
+    max-width: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    justify-content: space-evenly;
+}
+
+/* CSS cho mỗi khối container-temperature1 */
+.container-temperature1 {
+    background-color: #f0f4f8;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    font-family: Arial, sans-serif;
+    min-width: 200px;
+    flex: 1 1 calc(25% - 20px); /* Chiều rộng tự động để chia đều thành 4 cột trên màn hình rộng */
+    max-width: 250px; /* Đặt chiều rộng tối đa */
+    transition: border 0.3s ease, box-shadow 0.3s ease;
+    box-sizing: border-box;
+}
+
+/* Để các khối hiển thị phù hợp trên các màn hình nhỏ hơn */
+@media (max-width: 1024px) {
+    .container-temperature1 {
+        flex: 1 1 calc(33.33% - 20px); /* Hiển thị 3 cột trên màn hình trung bình */
+    }
+}
+
+@media (max-width: 768px) {
+    .container-temperature1 {
+        flex: 1 1 calc(50% - 20px); /* Hiển thị 2 cột trên màn hình nhỏ */
+    }
+}
+
+@media (max-width: 480px) {
+    .container-temperature1 {
+        flex: 1 1 100%; /* Hiển thị 1 cột trên màn hình rất nhỏ */
+    }
+}
+
+/* Tiêu đề của từng khối */
+.container-temperature1-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 15px;
+}
+
+/* Căn chỉnh hàng chứa "Value" */
+.value-input {
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 15px;
+    font-weight: bold;
+}
+
+/* Input */
+.value-input input[type="text"] {
+    width: 100%; /* Đặt chiều rộng 100% cho input để phù hợp màn hình */
+    max-width: 120px; /* Đặt chiều rộng tối đa */
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 14px;
+    margin-left: 10px;
+}
+
+/* Trạng thái */
+.container-temperature1-status {
+    font-size: 16px;
+    color: #333;
+    font-style: italic;
+    font-weight: bold;
+}
+
+/* Tạo màu nền cho từng khối để phân biệt */
+.container-temperature1:nth-child(1) {
+    background-color: #e0f7fa;
+}
+
+.container-temperature1:nth-child(2) {
+    background-color: #ffecb3;
+}
+
+.container-temperature1:nth-child(3) {
+    background-color: #ffe0b2;
+}
+
+.container-temperature1:nth-child(4) {
+    background-color: #dcedc8;
+}
+
+
+
+
+/* css gauge  */
+
+.gauge-container {
+    display: flex; 
+    flex-wrap: wrap; 
+    justify-content: space-around; 
+    align-items: center;
+    padding: 20px;
+
+}
+
+.gauge-wrapper {
+    display: flex;
+    flex-direction: column; /* Đặt các phần tử con theo chiều dọc */
+    align-items: center; /* Căn giữa theo chiều ngang */
+    margin: 20px; /* Tạo khoảng cách giữa các gauge */
+
+}
+
+#gauge1, #gauge2, #gauge3, #gauge4{
+    width: 300px;
+    height: 300px;
+}
+
+.gauge-label {
+    font-size: 16px; /* Kích thước chữ cho label */
+    font-weight: bold; /* In đậm chữ */
+    margin-top: 10px; /* Khoảng cách giữa gauge và label */
+}
+
+.hidden {
+    display: none;
+}
+.content {
+    margin-top: 20px;
+    padding: 10px;
+    border: 1px solid #ccc;
+}
+a.active {
+    font-weight: bold;
+    color: blue;
+}
+
+
+
+
+/* css for motor */
+.motor-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* Tạo 3 cột */
+    grid-template-rows: repeat(2, auto); /* Tạo 2 hàng tự động */
+    gap: 20px; /* Khoảng cách giữa các khối */
+    margin: 20px; /* Margin tổng thể */
+}
+
+.motor-container {
+    background: #f7f7f7;
+    border: 2px solid #c8c8c8;
+    border-radius: 20px;
+    padding: 20px; /* Padding cho khối */
+    text-align: center;
+    transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.motor-container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+.motor-container-button {
+    margin-top: 20px; /* Margin trên cho button */
+}
+
+.motor-button {
+    background-color: #007BFF; /* Màu nền nút */
+    color: white; /* Màu chữ nút */
+    border: none; /* Không viền */
+    border-radius: 5px; /* Bo góc nút */
+    padding: 10px 20px; /* Padding cho nút */
+    margin: 0 5px; /* Margin cho nút */
+    cursor: pointer; /* Con trỏ khi di chuột lên nút */
+    transition: background-color 0.3s; /* Hiệu ứng chuyển màu nền */
+}
+
+button:hover {
+    background-color: #0056b3; /* Màu nền nút khi hover */
+}
+
+.motor-icon1, .motor-icon2, .motor-icon3, .motor-icon4, .motor-icon5, .motor-icon6{
+    fill: #c3c3c3; /* Màu cho biểu tượng động cơ */
+}
+/* 
+.content-section {
+    display: none; 
+}
+
+#content-dashboard.active {
+    display: flex;
+}
+#content-alarmTrend.active {
+    display: flex; 
+}
+#content-status.active {
+    display: grid;
+} */
+
+.flex {
+    display: flex; /* Nếu muốn sử dụng flex */
+}
+
+.grid {
+    display: grid; /* Nếu muốn sử dụng grid */
+}
+
+.block {
+    display: block; /* Nếu muốn sử dụng block */
+}
+
+
+/* footer */
+.footer {
+    
+}
+
+/* line-chart */
+#curve_chart, #second_curve_chart {
+    width: 700px !important;
+    height: 400px !important;
+    border: 2px solid #333; 
+    border-radius: 15px;       /* Bo tròn góc */
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2); /* Tạo bóng đổ */
+    overflow: hidden;          /* Ẩn phần nội dung vượt ra ngoài */
+    background-color: #f9f9f9;
+  
+  }
+
+  #alarm {
+    font-size: 20px;
+    text-align: center;
+    color: #333;
+    margin-top: 10px;
+  }
+  .alarm-active {
+    color: red;
+    font-weight: bold;
+  }
+  .line-chart-container {
+    margin-top: 20px;
+  }

@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project 1</title>
+    <link rel="stylesheet" href="assets/base.css">
+    <link rel="stylesheet" href="assets/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.min.css">
+    <link rel="stylesheet" href="assets/animation.css">
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+    <script type='text/javascript' src='https://www.google.com/jsapi'></script>
+    <script type='text/javascript'>
+      google.load('visualization', '1', {packages: ['gauge']});
+    </script>
+    <script>       
+    // ---------------------------------------------------------------------------------------------//
+            // linechart.js
+            google.charts.load('current', { packages: ['corechart'] });
+            google.charts.setOnLoadCallback(() => {
+            drawChart();
+            drawSecondChart();
+            });
+            // draw chart number one
+            let chart, data, secondChart, secondData;
+
+const ALARM_THRESHOLD = 80; // Ngưỡng cảnh báo
+
+// Hàm vẽ biểu đồ đầu tiên
+function drawChart() {
+    // Dữ liệu cho biểu đồ đầu tiên
+    data = google.visualization.arrayToDataTable([
+        ['Time', 'Temp1'],
+        [new Date().toLocaleTimeString(), 0]
+    ]);
+    chart = new google.visualization.LineChart(document.getElementById('curve_chart'));
+
+    // Dữ liệu cho biểu đồ thứ hai
+    secondData = google.visualization.arrayToDataTable([
+        ['Time', 'Temp2'],
+        [new Date().toLocaleTimeString(), 0]
+    ]);
+    secondChart = new google.visualization.LineChart(document.getElementById('second_curve_chart'));
+}
+
+// Hàm cập nhật biểu đồ đầu tiên và biểu đồ thứ hai
+function updateChart(newValue1, newValue2) {
+    const currentTime = new Date().toLocaleTimeString();
+
+    // Cảnh báo cho biểu đồ đầu tiên
+    if (newValue1 !== null && newValue1 >= ALARM_THRESHOLD) {
+        document.getElementById('alarm').innerHTML = `Alarm: Giá trị Temp1 đã đạt ${newValue1.toFixed(2)}!`;
+        document.getElementById('alarm').style.color = 'red';
+    } else {
+        document.getElementById('alarm').innerHTML = '';
+    }
+
+    // Cập nhật dữ liệu cho biểu đồ đầu tiên
+    if (newValue1 !== null) {
+        data.addRow([currentTime, newValue1]);
+        if (data.getNumberOfRows() > 10) data.removeRow(0); // Giới hạn số điểm hiển thị trong biểu đồ
+    }
+
+    // Cập nhật dữ liệu cho biểu đồ thứ hai
+    if (newValue2 !== null) {
+        secondData.addRow([currentTime, newValue2]);
+        if (secondData.getNumberOfRows() > 10) secondData.removeRow(0); // Giới hạn số điểm hiển thị trong biểu đồ
+    }
+
+    // Vẽ lại biểu đồ đầu tiên nếu có dữ liệu
+    if (newValue1 !== null) {
+        chart.draw(data, {
+            hAxis: { 
+                title: 'Time',
+                format: 'hh:mm a',
+                textStyle: { color: '#333', fontSize: 16 },
+                titleTextStyle: { color: '#333', fontSize: 16, bold: true },
+            },
+            vAxis: { 
+                title: 'Temperature Outdoor', 
+                minValue: 0, 
+                maxValue: 150, 
+                textStyle: { color: '#333', fontSize: 16 },
+                titleTextStyle: { color: '#333', fontSize: 16, bold: true },
+            },
+            legend: { 
+                position: 'right', 
+                textStyle: { fontSize: 16, bold: true },
+            },
+            title: 'Temperature Outdoor',
+            titleTextStyle: { color: '#4CAF50', fontSize: 20, bold: true },
+            width: 700,
+            height: 400,
+            pointSize: 5,
+            lineWidth: 3,
+        });
+    }
+
+    // Vẽ lại biểu đồ thứ hai nếu có dữ liệu
+    if (newValue2 !== null) {
+        secondChart.draw(secondData, {
+            hAxis: { 
+                title: 'Time',
+                format: 'hh:mm a',
+                textStyle: { color: '#333', fontSize: 16 },
+                titleTextStyle: { color: '#333', fontSize: 16, bold: true },
+            },
+            vAxis: { 
+                title: 'Temperature Indoor', 
+                minValue: 0, 
+                maxValue: 150, 
+                textStyle: { color: '#333', fontSize: 16 },
+                titleTextStyle: { color: '#333', fontSize: 16, bold: true },
+            },
+            legend: { 
+                position: 'right', 
+                textStyle: { fontSize: 16, bold: true },
+            },
+            title: 'Temperature Indoor',
+            titleTextStyle: { color: '#4CAF50', fontSize: 20, bold: true },
+            width: 700,
+            height: 400,
+            pointSize: 5,
+            lineWidth: 3,
+        });
+    }
+}
+
+
+
+ // -------------------------------------------------------------------------------------------//
+    </script>
+
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        var gauges = []; // Mảng để lưu trữ các gauge
+        var gaugeDataArray = []; // Mảng để lưu trữ dữ liệu của các gauge
+        var gaugeOptions = {
+            min: 0,
+            max: 120, // Đặt giá trị tối đa là 120
+            yellowFrom: 80,  // Thay đổi ngưỡng vàng từ 80 đến 100
+            yellowTo: 100,
+            redFrom: 100, // Đặt ngưỡng đỏ bắt đầu từ 100
+            redTo: 120,
+            minorTicks: 5
+        };
+        function drawGauges() {
+            // Tạo nhiều gauge
+            for (let i = 0; i < 4; i++) {
+                let gaugeData = google.visualization.arrayToDataTable([['Label', 'Value'], ['Value', 0]]);
+                gauges[i] = new google.visualization.Gauge(document.getElementById('gauge' + (i + 1)));
+                gaugeDataArray[i] = gaugeData;
+                gauges[i].draw(gaugeData, gaugeOptions);
+            }
+        }
+
+        function updateGauge(index, value) {
+            // Cập nhật giá trị cho gauge theo chỉ số
+            gaugeDataArray[index].setValue(0, 1, value);
+            gauges[index].draw(gaugeDataArray[index], gaugeOptions);
+        }
+
+
+
+        // --------------------------------------------Socket---------------------------------//
+        const socket = io();
+        socket.on('dataUpdate', (data) => {
+            const { presentValue, objectIdentify, objectName } = data; // Lấy giá trị từ data
+            const roundedValue = parseFloat(presentValue).toFixed(1);
+            const numericRoundedValue = parseFloat(roundedValue);
+            document.getElementById('presentValue1').innerText = roundedValue;
+            updateGauge(0, numericRoundedValue); // Cập nhật gauge 1
+            updateChart(numericRoundedValue, null);
+
+
+            // document.getElementById('presentValue1').innerText = presentValue; // Cập nhật hiển thị cho gauge 1
+            // updateGauge(0, presentValue); // Cập nhật gauge 1
+            // updateChart(presentValue, null);
+            // Bạn có thể thêm logic để cập nhật cho các gauge khác dựa trên Object_Identify
+        });
+
+        socket.on('dataUpdateSetpoint2', (data) => {
+            const { presentValue } = data; // Lấy giá trị từ data
+            const roundedValue = parseFloat(presentValue).toFixed(1);
+            document.getElementById('presentValue2').innerText = roundedValue; // Cập nhật hiển thị cho gauge 2
+            const numericRoundedValue = parseFloat(roundedValue);
+            updateGauge(1, numericRoundedValue); // Cập nhật gauge 2
+            updateChart(null, numericRoundedValue);
+        });
+
+        socket.on('dataUpdateSetpoint3', (data) => {
+            const { presentValue } = data; // Lấy giá trị từ data
+            const roundedValue = parseFloat(presentValue).toFixed(1);
+            document.getElementById('presentValue3').innerText = roundedValue;// Cập nhật hiển thị cho gauge 3
+            updateGauge(2, roundedValue); // Cập nhật gauge 3
+        });
+        google.setOnLoadCallback(drawGauges); // Vẽ gauge khi Google API đã sẵn sàng
+    </script>
+</head>
+
+
+<!-- body -->
+<body>
+    <!-- navbar -->
+    <header class="header">
+        <div class="header-wrapper">
+            <a href="">
+                <div class="header-logo">
+                    <div>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/d/de/HCMUT_official_logo.png" />
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="header-navbar">
+            <nav class="header-navbar-item">
+                <a href="home" data-section="content-home" id="home">HOME</a>
+                <a href="setpoint" data-section="content-dashboard" id="dashboard">SETPOINT</a>
+                <a href="status" data-section="content-status" id="status">STATUS</a>
+                <a href="Gaugechart" data-section="content-alarmTrend" id="alarmTrendLink">GAUGE</a>
+                <a href="report" data-section="content-trend" id="report">TREND</a>
+                <a href="reference" data-filter="REFERENCE" id="reference">REFERENCE</a>
+                
+            </nav>
+        </div>
+        <div class="header-auth">
+            <a href="">AUTHORIZATION</a>
+        </div>
+    </header>
+
+    <!-- setpoint -->
+
+
+    <!-- block ui -->
+    <div id="content-dashboard" class="content-section container-temperature flex">
+        <div class="container-temperature1">
+            <p class="container-temperature1-title">Temperature Indoor</p> 
+            <div class="value-input">
+                <p>Value</p>
+                <input type="text" name="" id="setpoint1" placeholder="Enter value">
+                <button onclick="sendSetpoint('setpoint1', 'BACnetSetpoint/Setpoint1')">Send</button>
+            </div>
+            <p class="container-temperature1-status">Status</p>
+        </div>
+    
+        <div class="container-temperature1">
+            <p class="container-temperature1-title">Temperature Outdoor</p> 
+            <div class="value-input">
+                <p>Value</p>
+                <input type="text" name="" id="setpoint2" placeholder="Enter value">
+                <button onclick="sendSetpoint('setpoint2', 'BACnetSetpoint/Setpoint2')">Send</button>
+            </div>
+            <p class="container-temperature1-status">Status</p>
+        </div>
+    
+        <div class="container-temperature1">
+            <p class="container-temperature1-title">Temperature Water</p> 
+            <div class="value-input">
+                <p>Value</p>
+                <input type="text" name="" id="setpoint3" placeholder="Enter value">
+                                <button onclick="sendSetpoint('setpoint3', 'BACnetSetpoint/Setpoint3')">Send</button>
+
+            </div>
+            <p class="container-temperature1-status">Status</p>
+        </div>
+    
+        <div class="container-temperature1">
+            <p class="container-temperature1-title">Temperature - ESP8266</p> 
+            <div class="value-input">
+                <p>Value</p>
+                <input type="text" name="" id="">
+            </div>
+            <p class="container-temperature1-status">Status</p>
+        </div>
+    </div>
+
+    <!-- Gauge Chart -->      
+
+    <div id="content-alarmTrend" class="content-section gauge-container flex">
+          <div class="gauge-wrapper">
+                <div id="gauge1"></div>
+                <div class="gauge-label">Temperature Indoor: <span id="presentValue1">0</span></div>
+            </div>
+                    
+            <div class="gauge-wrapper">
+                <div id="gauge2"></div>
+                <div class="gauge-label">Temperature Outdoor: <span id="presentValue2">0</span></div>
+            </div>
+                    
+            <div class="gauge-wrapper">
+                <div id="gauge3"></div>
+                <div class="gauge-label">Temperature Water: <span id="presentValue3">0</span></div>
+            </div>     
+            <div class="gauge-wrapper">
+                <div id="gauge4"></div>
+                <div class="gauge-label">Temperature-EP8266: <span id="presentValue4">0</span></div>
+            </div>       
+    </div> 
+
+
+    <!-- Motor Status -->
+    <div id="content-status" class="content-section motor-grid grid">
+        <div class="motor-container motor-container-m1" id="motor1">
+            <svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 461.169" width="100">
+            <path d="M164.327 88.809h232.902v308.103h-11.572l20.326 47.279a11.763 11.763 0 011.181 5.155c0 6.529-5.294 11.823-11.823 11.823H195.626v-.047c-1.318 0-2.658-.223-3.971-.693-6.122-2.192-9.305-8.934-7.113-15.055l17.363-48.462h-37.578c-10.333 0-19.732-4.231-26.547-11.045l-.026-.026c-6.814-6.815-11.046-16.214-11.046-26.548v-15.651H79.376c-5.759 0-11.008-2.358-14.8-6.151-3.785-3.785-6.148-9.022-6.148-14.797v-59.423H20.411C9.139 263.271 0 254.132 0 242.86c0-11.271 9.139-20.41 20.411-20.41h38.017v-59.423c0-5.773 2.351-11.011 6.144-14.803 3.793-3.793 9.03-6.144 14.804-6.144h47.332v-15.652c0-10.334 4.232-19.733 11.046-26.548l.026-.026c6.815-6.813 16.214-11.045 26.547-11.045zM247.214 0h105.097c17.73 0 32.233 14.536 32.233 32.233v.004c0 17.696-14.535 32.233-32.233 32.233H247.214c-17.697 0-32.233-14.505-32.233-32.233v-.004C214.981 14.503 229.486 0 247.214 0zM122.04 165.726H82.075v154.269h39.965V165.726zm298.836-76.238c23.617 2.73 44.866 13.533 60.888 29.557C500.421 137.7 512 163.44 512 191.757v109.537c0 26.302-10.757 50.211-28.083 67.535-16.333 16.334-38.515 26.828-63.041 27.976V89.488zm-58.625 312.798H224.994l-12.624 35.236h165.029l-15.148-35.236zm-161.583-218.22c-7.45 0-13.492-6.042-13.492-13.492 0-7.451 6.042-13.493 13.492-13.493h146.274c7.45 0 13.492 6.042 13.492 13.493 0 7.45-6.042 13.492-13.492 13.492H200.668zm0 147.512c-7.45 0-13.492-6.042-13.492-13.493 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.493-13.492 13.493H200.668zm0-73.756c-7.45 0-13.492-6.041-13.492-13.492 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.492-13.492 13.492H200.668z" class="motor-icon1" /></svg>
+            <div class="motor-container-button">
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor1" data-message="true" id="START-M1">START</button>
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor1" data-message="false" id="STOP-M1">STOP</button>
+            </div>    
+        </div>
+        <div class="motor-container" id="motor2">
+            <svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 461.169" width="100">
+            <path d="M164.327 88.809h232.902v308.103h-11.572l20.326 47.279a11.763 11.763 0 011.181 5.155c0 6.529-5.294 11.823-11.823 11.823H195.626v-.047c-1.318 0-2.658-.223-3.971-.693-6.122-2.192-9.305-8.934-7.113-15.055l17.363-48.462h-37.578c-10.333 0-19.732-4.231-26.547-11.045l-.026-.026c-6.814-6.815-11.046-16.214-11.046-26.548v-15.651H79.376c-5.759 0-11.008-2.358-14.8-6.151-3.785-3.785-6.148-9.022-6.148-14.797v-59.423H20.411C9.139 263.271 0 254.132 0 242.86c0-11.271 9.139-20.41 20.411-20.41h38.017v-59.423c0-5.773 2.351-11.011 6.144-14.803 3.793-3.793 9.03-6.144 14.804-6.144h47.332v-15.652c0-10.334 4.232-19.733 11.046-26.548l.026-.026c6.815-6.813 16.214-11.045 26.547-11.045zM247.214 0h105.097c17.73 0 32.233 14.536 32.233 32.233v.004c0 17.696-14.535 32.233-32.233 32.233H247.214c-17.697 0-32.233-14.505-32.233-32.233v-.004C214.981 14.503 229.486 0 247.214 0zM122.04 165.726H82.075v154.269h39.965V165.726zm298.836-76.238c23.617 2.73 44.866 13.533 60.888 29.557C500.421 137.7 512 163.44 512 191.757v109.537c0 26.302-10.757 50.211-28.083 67.535-16.333 16.334-38.515 26.828-63.041 27.976V89.488zm-58.625 312.798H224.994l-12.624 35.236h165.029l-15.148-35.236zm-161.583-218.22c-7.45 0-13.492-6.042-13.492-13.492 0-7.451 6.042-13.493 13.492-13.493h146.274c7.45 0 13.492 6.042 13.492 13.493 0 7.45-6.042 13.492-13.492 13.492H200.668zm0 147.512c-7.45 0-13.492-6.042-13.492-13.493 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.493-13.492 13.493H200.668zm0-73.756c-7.45 0-13.492-6.041-13.492-13.492 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.492-13.492 13.492H200.668z" class="motor-icon2" /></svg>
+            <div class="motor-container-button">
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor2" data-message="true" id="START-M2">START</button>
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor2" data-message="false" id="STOP-M2">STOP</button>
+            </div>    
+        </div>
+        <div class="motor-container" id="motor3">
+            <svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 461.169" width="100">
+            <path d="M164.327 88.809h232.902v308.103h-11.572l20.326 47.279a11.763 11.763 0 011.181 5.155c0 6.529-5.294 11.823-11.823 11.823H195.626v-.047c-1.318 0-2.658-.223-3.971-.693-6.122-2.192-9.305-8.934-7.113-15.055l17.363-48.462h-37.578c-10.333 0-19.732-4.231-26.547-11.045l-.026-.026c-6.814-6.815-11.046-16.214-11.046-26.548v-15.651H79.376c-5.759 0-11.008-2.358-14.8-6.151-3.785-3.785-6.148-9.022-6.148-14.797v-59.423H20.411C9.139 263.271 0 254.132 0 242.86c0-11.271 9.139-20.41 20.411-20.41h38.017v-59.423c0-5.773 2.351-11.011 6.144-14.803 3.793-3.793 9.03-6.144 14.804-6.144h47.332v-15.652c0-10.334 4.232-19.733 11.046-26.548l.026-.026c6.815-6.813 16.214-11.045 26.547-11.045zM247.214 0h105.097c17.73 0 32.233 14.536 32.233 32.233v.004c0 17.696-14.535 32.233-32.233 32.233H247.214c-17.697 0-32.233-14.505-32.233-32.233v-.004C214.981 14.503 229.486 0 247.214 0zM122.04 165.726H82.075v154.269h39.965V165.726zm298.836-76.238c23.617 2.73 44.866 13.533 60.888 29.557C500.421 137.7 512 163.44 512 191.757v109.537c0 26.302-10.757 50.211-28.083 67.535-16.333 16.334-38.515 26.828-63.041 27.976V89.488zm-58.625 312.798H224.994l-12.624 35.236h165.029l-15.148-35.236zm-161.583-218.22c-7.45 0-13.492-6.042-13.492-13.492 0-7.451 6.042-13.493 13.492-13.493h146.274c7.45 0 13.492 6.042 13.492 13.493 0 7.45-6.042 13.492-13.492 13.492H200.668zm0 147.512c-7.45 0-13.492-6.042-13.492-13.493 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.493-13.492 13.493H200.668zm0-73.756c-7.45 0-13.492-6.041-13.492-13.492 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.492-13.492 13.492H200.668z" class="motor-icon3" /></svg>
+            <div class="motor-container-button">
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor3" data-message="true" id="START-M3">START</button>
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor3" data-message="false" id="STOP-M3">STOP</button>
+            </div>    
+        </div>
+        <div class="motor-container" id="motor4">
+            <svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 461.169" width="100">
+            <path d="M164.327 88.809h232.902v308.103h-11.572l20.326 47.279a11.763 11.763 0 011.181 5.155c0 6.529-5.294 11.823-11.823 11.823H195.626v-.047c-1.318 0-2.658-.223-3.971-.693-6.122-2.192-9.305-8.934-7.113-15.055l17.363-48.462h-37.578c-10.333 0-19.732-4.231-26.547-11.045l-.026-.026c-6.814-6.815-11.046-16.214-11.046-26.548v-15.651H79.376c-5.759 0-11.008-2.358-14.8-6.151-3.785-3.785-6.148-9.022-6.148-14.797v-59.423H20.411C9.139 263.271 0 254.132 0 242.86c0-11.271 9.139-20.41 20.411-20.41h38.017v-59.423c0-5.773 2.351-11.011 6.144-14.803 3.793-3.793 9.03-6.144 14.804-6.144h47.332v-15.652c0-10.334 4.232-19.733 11.046-26.548l.026-.026c6.815-6.813 16.214-11.045 26.547-11.045zM247.214 0h105.097c17.73 0 32.233 14.536 32.233 32.233v.004c0 17.696-14.535 32.233-32.233 32.233H247.214c-17.697 0-32.233-14.505-32.233-32.233v-.004C214.981 14.503 229.486 0 247.214 0zM122.04 165.726H82.075v154.269h39.965V165.726zm298.836-76.238c23.617 2.73 44.866 13.533 60.888 29.557C500.421 137.7 512 163.44 512 191.757v109.537c0 26.302-10.757 50.211-28.083 67.535-16.333 16.334-38.515 26.828-63.041 27.976V89.488zm-58.625 312.798H224.994l-12.624 35.236h165.029l-15.148-35.236zm-161.583-218.22c-7.45 0-13.492-6.042-13.492-13.492 0-7.451 6.042-13.493 13.492-13.493h146.274c7.45 0 13.492 6.042 13.492 13.493 0 7.45-6.042 13.492-13.492 13.492H200.668zm0 147.512c-7.45 0-13.492-6.042-13.492-13.493 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.493-13.492 13.493H200.668zm0-73.756c-7.45 0-13.492-6.041-13.492-13.492 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.492-13.492 13.492H200.668z" class="motor-icon4" /></svg>
+            <div class="motor-container-button">
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor4" data-message="true" id="START-M4">START</button>
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor4" data-message="false" id="STOP-M4">STOP</button>
+            </div>    
+        </div>
+        <div class="motor-container" id="motor5">
+            <svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 461.169" width="100">
+            <path d="M164.327 88.809h232.902v308.103h-11.572l20.326 47.279a11.763 11.763 0 011.181 5.155c0 6.529-5.294 11.823-11.823 11.823H195.626v-.047c-1.318 0-2.658-.223-3.971-.693-6.122-2.192-9.305-8.934-7.113-15.055l17.363-48.462h-37.578c-10.333 0-19.732-4.231-26.547-11.045l-.026-.026c-6.814-6.815-11.046-16.214-11.046-26.548v-15.651H79.376c-5.759 0-11.008-2.358-14.8-6.151-3.785-3.785-6.148-9.022-6.148-14.797v-59.423H20.411C9.139 263.271 0 254.132 0 242.86c0-11.271 9.139-20.41 20.411-20.41h38.017v-59.423c0-5.773 2.351-11.011 6.144-14.803 3.793-3.793 9.03-6.144 14.804-6.144h47.332v-15.652c0-10.334 4.232-19.733 11.046-26.548l.026-.026c6.815-6.813 16.214-11.045 26.547-11.045zM247.214 0h105.097c17.73 0 32.233 14.536 32.233 32.233v.004c0 17.696-14.535 32.233-32.233 32.233H247.214c-17.697 0-32.233-14.505-32.233-32.233v-.004C214.981 14.503 229.486 0 247.214 0zM122.04 165.726H82.075v154.269h39.965V165.726zm298.836-76.238c23.617 2.73 44.866 13.533 60.888 29.557C500.421 137.7 512 163.44 512 191.757v109.537c0 26.302-10.757 50.211-28.083 67.535-16.333 16.334-38.515 26.828-63.041 27.976V89.488zm-58.625 312.798H224.994l-12.624 35.236h165.029l-15.148-35.236zm-161.583-218.22c-7.45 0-13.492-6.042-13.492-13.492 0-7.451 6.042-13.493 13.492-13.493h146.274c7.45 0 13.492 6.042 13.492 13.493 0 7.45-6.042 13.492-13.492 13.492H200.668zm0 147.512c-7.45 0-13.492-6.042-13.492-13.493 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.493-13.492 13.493H200.668zm0-73.756c-7.45 0-13.492-6.041-13.492-13.492 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.492-13.492 13.492H200.668z" class="motor-icon5" /></svg>
+            <div class="motor-container-button">
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor5" data-message="true" id="START-M5">START</button>
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor5" data-message="false" id="STOP-M5">STOP</button>
+            </div>    
+        </div>
+        <div class="motor-container" id="motor6">
+            <svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision" image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 461.169" width="100">
+            <path d="M164.327 88.809h232.902v308.103h-11.572l20.326 47.279a11.763 11.763 0 011.181 5.155c0 6.529-5.294 11.823-11.823 11.823H195.626v-.047c-1.318 0-2.658-.223-3.971-.693-6.122-2.192-9.305-8.934-7.113-15.055l17.363-48.462h-37.578c-10.333 0-19.732-4.231-26.547-11.045l-.026-.026c-6.814-6.815-11.046-16.214-11.046-26.548v-15.651H79.376c-5.759 0-11.008-2.358-14.8-6.151-3.785-3.785-6.148-9.022-6.148-14.797v-59.423H20.411C9.139 263.271 0 254.132 0 242.86c0-11.271 9.139-20.41 20.411-20.41h38.017v-59.423c0-5.773 2.351-11.011 6.144-14.803 3.793-3.793 9.03-6.144 14.804-6.144h47.332v-15.652c0-10.334 4.232-19.733 11.046-26.548l.026-.026c6.815-6.813 16.214-11.045 26.547-11.045zM247.214 0h105.097c17.73 0 32.233 14.536 32.233 32.233v.004c0 17.696-14.535 32.233-32.233 32.233H247.214c-17.697 0-32.233-14.505-32.233-32.233v-.004C214.981 14.503 229.486 0 247.214 0zM122.04 165.726H82.075v154.269h39.965V165.726zm298.836-76.238c23.617 2.73 44.866 13.533 60.888 29.557C500.421 137.7 512 163.44 512 191.757v109.537c0 26.302-10.757 50.211-28.083 67.535-16.333 16.334-38.515 26.828-63.041 27.976V89.488zm-58.625 312.798H224.994l-12.624 35.236h165.029l-15.148-35.236zm-161.583-218.22c-7.45 0-13.492-6.042-13.492-13.492 0-7.451 6.042-13.493 13.492-13.493h146.274c7.45 0 13.492 6.042 13.492 13.493 0 7.45-6.042 13.492-13.492 13.492H200.668zm0 147.512c-7.45 0-13.492-6.042-13.492-13.493 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.493-13.492 13.493H200.668zm0-73.756c-7.45 0-13.492-6.041-13.492-13.492 0-7.45 6.042-13.492 13.492-13.492h146.274c7.45 0 13.492 6.042 13.492 13.492 0 7.451-6.042 13.492-13.492 13.492H200.668z" class="motor-icon6" /></svg>
+            <div class="motor-container-button">
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor6" data-message="true" id="START-M6">START</button>
+                <button class="mqtt-button motor-button" data-topic="PLCcontrol/motor6" data-message="false" id="STOP-M6">STOP</button>
+            </div>    
+        </div>
+    </div>
+
+    <!-- line chart -->
+    <div class="line-chart-container content-section flex" id="content-trend" style="display: flex; justify-content: space-around;">
+        <div id="curve_chart" style="width: 700px; height: 400px"></div>
+        <div id="second_curve_chart" style="width: 700px; height: 400px"></div>
+    </div>
+    <div id="alarm" style="font-size: 18px; margin-top: 10px;"></div>
+
+    <script>
+
+
+
+// =================================MOTOR STATUS====================================================================
+        // Kết nối tới server Socket.IO
+        // Hàm gửi dữ liệu qua Socket.IO
+        function sendToMQTT(topic, message) {
+          socket.emit('sendToMQTT', { topic, message });
+        }
+        // Gắn sự kiện click cho các button với class 'mqtt-button'
+        document.querySelectorAll('.mqtt-button').forEach(button => {
+          button.addEventListener('click', () => {
+            const topic = button.getAttribute('data-topic');
+            const message = button.getAttribute('data-message');
+            sendToMQTT(topic, message);
+          });
+        });
+
+
+// =================================SETPOINT====================================================================
+        function sendSetpoint(inputId, topic) {
+            const inputElement = document.getElementById(inputId); // Lấy phần tử input từ ID
+            const value = parseFloat(inputElement.value); // Lấy giá trị nhập vào và chuyển đổi thành float
+
+            if (!isNaN(value)) {
+                // Gửi dữ liệu qua Socket.IO
+                socket.emit('setpointData', { topic, value });
+                console.log(`Sent to MQTT: Topic - ${topic}, Value - ${value}`);
+            } else {
+                console.error(`Invalid value for ${inputId}: ${inputElement.value}`);
+            }
+        }
+      </script>
+<script>
+    document.querySelectorAll('.header-navbar-item a').forEach(link => {
+        link.addEventListener('click', (event) => {
+            event.preventDefault(); // Ngăn chặn hành động mặc định của liên kết
+            // Lấy đường dẫn từ thuộc tính href
+            const url = link.getAttribute("href");
+            // Cập nhật URL mà không tải lại trang
+            history.pushState(null, '', url);
+            // Ẩn tất cả các phần nội dung
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none'; // Ẩn tất cả các section
+            });
+            // Hiển thị phần nội dung tương ứng
+            const sectionId = link.getAttribute("data-section");
+            const sectionToShow = document.getElementById(sectionId);
+            if (sectionToShow) {
+                const displayType = sectionToShow.classList.contains('flex') ? 'flex' :
+                                sectionToShow.classList.contains('grid') ? 'grid' : 
+                                'block';
+                sectionToShow.style.display = displayType; // Đặt kiểu hiển thị phù hợp
+            }
+        });
+    });
+
+    
+
+
+    // event for motor
+    document.getElementById("START-M1").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon1");
+    motors.forEach((motor) => {
+        motor.style.fill = "green"; // Change color to green when "On"
+    });
+    });
+
+    document.getElementById("STOP-M1").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon1");
+    motors.forEach((motor) => {
+        motor.style.fill = "#c3c3c3"; // Change color back to original when "Off"
+    });
+    });
+    //motor2
+    document.getElementById("START-M2").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon2");
+    motors.forEach((motor) => {
+        motor.style.fill = "green"; // Change color to green when "On"
+    });
+    });
+
+    document.getElementById("STOP-M2").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon2");
+    motors.forEach((motor) => {
+        motor.style.fill = "#c3c3c3"; // Change color back to original when "Off"
+    });
+    });
+    //motor3
+    document.getElementById("START-M3").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon3");
+    motors.forEach((motor) => {
+        motor.style.fill = "green"; // Change color to green when "On"
+    });
+    });
+
+    document.getElementById("STOP-M3").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon3");
+    motors.forEach((motor) => {
+        motor.style.fill = "#c3c3c3"; // Change color back to original when "Off"
+    });
+    });
+    //motor4
+    document.getElementById("START-M4").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon4");
+    motors.forEach((motor) => {
+        motor.style.fill = "green"; // Change color to green when "On"
+    });
+    });
+
+    document.getElementById("STOP-M4").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon4");
+    motors.forEach((motor) => {
+        motor.style.fill = "#c3c3c3"; // Change color back to original when "Off"
+    });
+    });
+    //motor5
+    document.getElementById("START-M5").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon5");
+    motors.forEach((motor) => {
+        motor.style.fill = "green"; // Change color to green when "On"
+    });
+    });
+
+    document.getElementById("STOP-M5").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon5");
+    motors.forEach((motor) => {
+        motor.style.fill = "#c3c3c3"; // Change color back to original when "Off"
+    });
+    });
+    //motor6
+    document.getElementById("START-M6").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon6");
+    motors.forEach((motor) => {
+        motor.style.fill = "green"; // Change color to green when "On"
+    });
+    });
+
+    document.getElementById("STOP-M6").addEventListener("click", () => {
+    const motors = document.querySelectorAll(".motor-icon6");
+    motors.forEach((motor) => {
+        motor.style.fill = "#c3c3c3"; // Change color back to original when "Off"
+    });
+    });
+   
+
+</script>
+<footer class="footer">
+    
+
+</footer>
+</body>
+
+</html>
